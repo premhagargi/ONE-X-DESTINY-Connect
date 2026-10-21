@@ -141,64 +141,68 @@ export function ChatRoom({
 
   return (
     <div className="flex h-dvh flex-1 flex-col font-sans tracking-tight">
-      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-2.5 sm:px-6">
-        <button
-          type="button"
-          onClick={handleLeave}
-          disabled={leaving}
-          aria-label="Leave room and choose another"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-horizon disabled:opacity-50"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path
-              d="M13 8H3M6.5 3.5 3 8l3.5 4.5"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate font-sans font-semibold text-base sm:text-lg text-ink tracking-tight">{room.name}</h1>
-            <span
-              title={status === "online" ? "Connected" : status === "connecting" ? "Connecting..." : "Offline"}
-              className={`h-2 w-2 rounded-full shrink-0 ${
-                status === "online"
-                  ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"
-                  : status === "connecting"
-                  ? "bg-amber-400 animate-pulse"
-                  : "bg-red-400"
-              }`}
-            />
+      <header className="border-b border-line bg-card px-4 py-2.5 sm:px-6">
+        <div className="mx-auto flex w-full max-w-4xl items-center gap-3">
+          <button
+            type="button"
+            onClick={handleLeave}
+            disabled={leaving}
+            aria-label="Leave room and choose another"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-horizon disabled:opacity-50"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M13 8H3M6.5 3.5 3 8l3.5 4.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate font-sans font-semibold text-base sm:text-lg text-ink tracking-tight">
+                {room.name}
+              </h1>
+              <span
+                title={status === "online" ? "Connected" : status === "connecting" ? "Connecting..." : "Offline"}
+                className={`h-2 w-2 rounded-full shrink-0 ${
+                  status === "online"
+                    ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"
+                    : status === "connecting"
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-red-400"
+                }`}
+              />
+            </div>
+            <p className="truncate text-xs text-mist tracking-tight">
+              You&apos;re <span className="font-medium text-harbor-dark">{nickname}</span> • {room.description}
+            </p>
           </div>
-          <p className="truncate text-xs text-mist tracking-tight">
-            You&apos;re <span className="font-medium text-harbor-dark">{nickname}</span> • {room.description}
-          </p>
-        </div>
 
-        <button
-          type="button"
-          onClick={handleShare}
-          title="Share room link"
-          className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-horizon-50 px-3 text-xs font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor hover:text-harbor-dark"
-        >
-          {shareCopied ? (
-            <span className="text-harbor-dark font-semibold">Copied!</span>
-          ) : (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-              </svg>
-              <span className="hidden sm:inline">Share</span>
-            </>
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            title="Share room link"
+            className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-horizon-50 px-3 text-xs font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor hover:text-harbor-dark"
+          >
+            {shareCopied ? (
+              <span className="text-harbor-dark font-semibold">Copied!</span>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                <span className="hidden sm:inline">Share</span>
+              </>
+            )}
+          </button>
+        </div>
       </header>
 
       <ConnectionBanner status={status} />
@@ -208,32 +212,32 @@ export function ChatRoom({
           ref={containerRef}
           className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6"
         >
-          {hasMoreOlder && (
-            <div className="mb-4 flex justify-center">
-              <button
-                type="button"
-                onClick={handleLoadOlder}
-                disabled={loadingOlder}
-                className="rounded-full border border-line bg-card px-4 py-1.5 text-xs sm:text-sm font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor disabled:opacity-50 shadow-2xs"
-              >
-                {loadingOlder ? "Loading…" : "Load earlier messages"}
-              </button>
-            </div>
-          )}
-
-          {messages.length === 0 && (
-            <div className="my-auto flex flex-col items-center justify-center px-4 py-12 text-center font-sans tracking-tight">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-harbor-tint text-2xl">
-                ✈️
+          <div className="mx-auto w-full max-w-4xl flex flex-col gap-0.5">
+            {hasMoreOlder && (
+              <div className="mb-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleLoadOlder}
+                  disabled={loadingOlder}
+                  className="rounded-full border border-line bg-card px-4 py-1.5 text-xs sm:text-sm font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor disabled:opacity-50 shadow-2xs"
+                >
+                  {loadingOlder ? "Loading…" : "Load earlier messages"}
+                </button>
               </div>
-              <h2 className="mt-3 font-sans font-bold text-lg text-ink tracking-tight">Welcome to {room.name}</h2>
-              <p className="mt-1 max-w-xs text-xs sm:text-sm text-mist tracking-tight">
-                Nobody has posted yet. Say hello, ask a question, or share travel tips!
-              </p>
-            </div>
-          )}
+            )}
 
-          <div className="flex flex-col gap-0.5">
+            {messages.length === 0 && (
+              <div className="my-auto flex flex-col items-center justify-center px-4 py-12 text-center font-sans tracking-tight">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-harbor-tint text-2xl">
+                  ✈️
+                </div>
+                <h2 className="mt-3 font-sans font-bold text-lg text-ink tracking-tight">Welcome to {room.name}</h2>
+                <p className="mt-1 max-w-xs text-xs sm:text-sm text-mist tracking-tight">
+                  Nobody has posted yet. Say hello, ask a question, or share travel tips!
+                </p>
+              </div>
+            )}
+
             {rows.map(({ message: m, isConsecutive }) => {
               const isMine = m.nickname === nickname;
               return (
