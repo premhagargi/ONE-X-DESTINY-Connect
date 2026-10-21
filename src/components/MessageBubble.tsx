@@ -15,20 +15,30 @@ const AVATAR_PALETTE = [
   { bg: "bg-purple-100", text: "text-purple-800" },
 ];
 
+const avatarCache = new Map<string, { bg: string; text: string }>();
 function getAvatarStyle(name: string) {
+  const cached = avatarCache.get(name);
+  if (cached) return cached;
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  const style = AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  avatarCache.set(name, style);
+  return style;
 }
 
+const timeCache = new Map<string, string>();
 function formatTime(iso: string): string {
+  const cached = timeCache.get(iso);
+  if (cached) return cached;
   try {
-    return new Date(iso).toLocaleTimeString(undefined, {
+    const formatted = new Date(iso).toLocaleTimeString(undefined, {
       hour: "numeric",
       minute: "2-digit",
     });
+    timeCache.set(iso, formatted);
+    return formatted;
   } catch {
     return "";
   }

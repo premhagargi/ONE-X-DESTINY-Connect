@@ -12,38 +12,38 @@ import {
 
 export type ConnectionStatus = "connecting" | "online" | "offline";
 
+/**
+ * Deterministic compound comparator: sorts primarily by ISO createdAt timestamp,
+ * with message ID as a stable tie-breaker for identical timestamps or optimistic
+ * reconciliation.
+ */
 function byCreatedAt(a: ChatMessage, b: ChatMessage) {
-  return a.createdAt.localeCompare(b.createdAt);
+  const cmp = a.createdAt.localeCompare(b.createdAt);
+  if (cmp !== 0) return cmp;
+  return a.id.localeCompare(b.id);
 }
 
 function generateClientKey(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
-  // Fallback for older browsers without crypto.randomUUID.
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 /**
  * Owns message state, the realtime subscription, optimistic sending, and
- * reconnect reconciliation for one room. See README "Real-time
- * architecture" for the delivery-strategy writeup this implements:
+ * reconnect reconciliation for one room.
  *
  * 1. Optimistic rendering: sendMessage() appends a `status: "sending"`
  *    bubble immediately, before any network round trip.
  * 2. Server persistence: the message is POSTed to the API, which validates
  *    and writes it with Prisma.
  * 3. Realtime delivery to others: the server broadcasts the persisted row
- *    (see src/server/broadcast.ts); other clients' subscriptions here
- *    receive it.
+ *    via Supabase Realtime; other clients' subscriptions receive it.
  * 4. Reconciliation: the sender reconciles their own optimistic bubble
- *    against the *HTTP response*, not the broadcast — both paths funnel
- *    through the same upsertMessage() keyed by clientKey, so if the
- *    broadcast happens to arrive first (we don't disable `self` on the
- *    channel), it's a no-op upsert rather than a duplicate.
- * 5. Reconnection: on every (re)subscribe, we fetch anything created after
- *    the newest message we already have, so a gap from a dropped socket
- *    is closed from the database rather than assumed lost.
+ *    against the HTTP response.
+ * 5. Reconnection & Tab Wake: handles online/offline and visibilitychange
+ *    events to automatically recover missed messages after sleep/backgrounding.
  */
 export function useRealtimeMessages(params: {
   roomSlug: string;
@@ -58,9 +58,12 @@ export function useRealtimeMessages(params: {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
 
-  // Newest *persisted* message id we've seen, for since= reconciliation.
-  // A ref (not state) because it's write-heavy and read only inside
-  // callbacks, never rendered directly.
+  // Keep a stable ref to messages so callbacks like retryMessage don't invalidate
+  // and trigger cascades of component re-renders.
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  // Newest persisted message id we've seen, for since= reconciliation.
   const latestPersistedRef = useRef<{ id: string; createdAt: string } | null>(
     initialHistory.messages.length
       ? {
@@ -73,8 +76,13 @@ export function useRealtimeMessages(params: {
   const upsertMessage = useCallback((incoming: PublicMessage) => {
     setMessages((prev) => {
       const idx = prev.findIndex((m) => m.clientKey === incoming.clientKey);
-      const next = idx === -1 ? [...prev, { ...incoming, status: "sent" as const }] : [...prev];
-      if (idx !== -1) next[idx] = { ...incoming, status: "sent" };
+      let next: ChatMessage[];
+      if (idx === -1) {
+        next = [...prev, { ...incoming, status: "sent" as const }];
+      } else {
+        next = [...prev];
+        next[idx] = { ...incoming, status: "sent" };
+      }
       next.sort(byCreatedAt);
       return next;
     });
@@ -96,17 +104,44 @@ export function useRealtimeMessages(params: {
       const data: { messages: PublicMessage[] } = await res.json();
       for (const m of data.messages) upsertMessage(m);
     } catch {
-      // Best-effort — if this fails we'll try again on the next reconnect,
-      // or the reader can manually refresh.
+      // Best-effort — if this fails we'll try again on next reconnect or wake
     }
   }, [roomSlug, upsertMessage]);
 
+  // Handle network online/offline and tab visibility wake-ups
+  useEffect(() => {
+    function handleWakeup() {
+      if (document.visibilityState === "visible") {
+        void reconcile();
+      }
+    }
+
+    function handleOnline() {
+      setStatus("online");
+      void reconcile();
+    }
+
+    function handleOffline() {
+      setStatus("offline");
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    document.addEventListener("visibilitychange", handleWakeup);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      document.removeEventListener("visibilitychange", handleWakeup);
+    };
+  }, [reconcile]);
+
+  // Supabase Realtime channel subscription lifecycle
   useEffect(() => {
     const supabase = getSupabaseBrowser();
 
     if (!supabase) {
-      // Safe fallback to auto-polling if Supabase Realtime keys are not configured yet,
-      // ensuring the chat continues to work seamlessly without crashing.
+      // Safe fallback to auto-polling if Supabase Realtime keys are not configured
       setStatus("online");
       const pollTimer = setInterval(() => {
         void reconcile();
@@ -139,8 +174,7 @@ export function useRealtimeMessages(params: {
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomSlug]);
+  }, [roomSlug, upsertMessage, reconcile]);
 
   const sendMessage = useCallback(
     async (nickname: string, body: string) => {
@@ -186,14 +220,13 @@ export function useRealtimeMessages(params: {
     [roomSlug, upsertMessage],
   );
 
-  /** Retries a failed send, reusing its original clientKey — if the
-   * original request actually made it to the server despite the client
-   * seeing a failure, the server's unique (roomId, clientKey) constraint
-   * means this safely returns the already-persisted message instead of
-   * creating a duplicate. */
+  /**
+   * Retries a failed send, reusing its original clientKey.
+   * Completely referentially stable across renders to avoid bust memoization.
+   */
   const retryMessage = useCallback(
     async (clientKey: string) => {
-      const target = messages.find((m) => m.clientKey === clientKey);
+      const target = messagesRef.current.find((m) => m.clientKey === clientKey);
       if (!target) return;
 
       setMessages((prev) =>
@@ -220,7 +253,7 @@ export function useRealtimeMessages(params: {
         );
       }
     },
-    [messages, roomSlug, upsertMessage],
+    [roomSlug, upsertMessage],
   );
 
   const loadOlder = useCallback(async () => {

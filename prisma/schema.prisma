@@ -86,6 +86,7 @@ model Message {
   // time" and "give me messages for room X before cursor Y" — both served by
   // this composite index.
   @@index([roomId, createdAt])
+  @@index([roomId, sessionId, createdAt])
   @@unique([roomId, clientKey])
   @@map("messages")
 }

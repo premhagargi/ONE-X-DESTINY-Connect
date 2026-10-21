@@ -88,30 +88,27 @@ export function ChatRoom({
     }
   }
 
-  // Initial load: land at the bottom once the first batch of history has
-  // laid out, rather than on mount (fonts can still be shifting layout at
-  // that point).
+  // Initial load: land at the bottom once the first batch of history has laid out
   useEffect(() => {
     if (didInitialScroll.current) return;
     didInitialScroll.current = true;
     requestAnimationFrame(() => scrollToBottom("auto"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [scrollToBottom]);
 
-  // Follow new messages in, respecting the reader's current scroll
-  // position (see useAutoScroll.onMessageArrived).
+  // Follow new messages in, respecting the reader's current scroll position
   useEffect(() => {
     const last = messages[messages.length - 1];
     if (!last || last.clientKey === prevLastKeyRef.current) return;
     prevLastKeyRef.current = last.clientKey;
     onMessageArrived(last.nickname === nickname);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
+  }, [messages, nickname, onMessageArrived]);
 
   async function handleLoadOlder() {
     prepareForPrepend();
     await loadOlder();
-    requestAnimationFrame(restoreAfterPrepend);
+    requestAnimationFrame(() => {
+      restoreAfterPrepend();
+    });
   }
 
   async function handleSend(body: string) {
@@ -217,7 +214,7 @@ export function ChatRoom({
                 type="button"
                 onClick={handleLoadOlder}
                 disabled={loadingOlder}
-                className="rounded-full border border-line bg-card px-4 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-harbor disabled:opacity-50"
+                className="rounded-full border border-line bg-card px-4 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-harbor disabled:opacity-50 shadow-2xs"
               >
                 {loadingOlder ? "Loading…" : "Load earlier messages"}
               </button>
@@ -256,19 +253,23 @@ export function ChatRoom({
         </div>
 
         {newBelowCount > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center z-10">
             <button
               type="button"
               onClick={() => scrollToBottom("smooth")}
-              className="pointer-events-auto rounded-full bg-ink px-4 py-2 text-sm font-medium text-white shadow-lg transition-opacity hover:opacity-90"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:bg-ink-soft active:scale-95"
             >
-              {newBelowCount} new message{newBelowCount > 1 ? "s" : ""} ↓
+              <span>{newBelowCount} new message{newBelowCount > 1 ? "s" : ""}</span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v10M3 9l5 5 5-5" />
+              </svg>
             </button>
           </div>
         )}
       </div>
 
       <Composer
+        roomSlug={room.slug}
         onSend={handleSend}
         disabled={status === "offline"}
         disabledReason={

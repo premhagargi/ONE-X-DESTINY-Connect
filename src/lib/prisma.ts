@@ -7,10 +7,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
  * Next.js reloads modules on every request in dev (and the Next.js dev
  * server itself hot-reloads), which would otherwise create a fresh
  * PrismaClient — and a fresh connection pool — on every file save. We cache
- * the instance on `globalThis` in development to avoid exhausting the
- * database's connection limit. In production (a real serverless
- * invocation), a module is only evaluated once per cold start, so the
- * global isn't strictly necessary there but is harmless.
+ * the instance on `globalThis` in development and across warm serverless
+ * invocations to avoid exhausting the database's connection limit.
  *
  * Connection string: DATABASE_URL should be Supabase's pooled
  * ("Transaction pooler", port 6543, `?pgbouncer=true`) connection string.
@@ -37,6 +35,6 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma: PrismaClient = globalThis.__prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__prisma = prisma;
-}
+// Maintain cached client on globalThis in both development and serverless containers
+// to prevent connection pool churn across warm lambdas.
+globalThis.__prisma = prisma;

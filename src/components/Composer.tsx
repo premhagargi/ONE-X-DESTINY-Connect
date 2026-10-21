@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -13,14 +14,18 @@ const MAX_TEXTAREA_HEIGHT_PX = 160;
 const QUICK_EMOJIS = ["✈️", "🗺️", "📍", "🎒", "🏨", "👍", "❤️"];
 
 export function Composer({
+  roomSlug,
   onSend,
   disabled,
   disabledReason,
 }: {
+  roomSlug?: string;
   onSend: (body: string) => Promise<{ ok: boolean; error?: string }>;
   disabled: boolean;
   disabledReason?: string;
 }) {
+  const storageKey = roomSlug ? `destiny_draft_${roomSlug}` : null;
+
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +49,26 @@ export function Composer({
     });
   }, []);
 
+  // Restore persisted draft from sessionStorage on mount
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") return;
+    const saved = window.sessionStorage.getItem(storageKey);
+    if (saved) {
+      setDraft(saved);
+      scheduleResize();
+    }
+  }, [storageKey, scheduleResize]);
+
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
-    setDraft(e.target.value);
+    const val = e.target.value;
+    setDraft(val);
+    if (storageKey && typeof window !== "undefined") {
+      if (val) {
+        window.sessionStorage.setItem(storageKey, val);
+      } else {
+        window.sessionStorage.removeItem(storageKey);
+      }
+    }
     scheduleResize();
   }
 
@@ -53,7 +76,11 @@ export function Composer({
     const body = draft.trim();
     if (!body || sending || disabled) return;
 
+    // Instantly clear draft and storage
     setDraft("");
+    if (storageKey && typeof window !== "undefined") {
+      window.sessionStorage.removeItem(storageKey);
+    }
     setError(null);
     prevHeightRef.current = 0;
     if (textareaRef.current) {
@@ -65,7 +92,19 @@ export function Composer({
     setSending(false);
 
     if (!result.ok) {
-      setDraft(body);
+      // If error was a content/validation error (e.g. rate limit, duplicate), restore into draft
+      // so user can modify it. If connection drop, optimistic bubble in chat provides 1-click retry.
+      const isConnectionIssue =
+        result.error &&
+        (result.error.toLowerCase().includes("connection") ||
+          result.error.toLowerCase().includes("network"));
+
+      if (!isConnectionIssue) {
+        setDraft(body);
+        if (storageKey && typeof window !== "undefined") {
+          window.sessionStorage.setItem(storageKey, body);
+        }
+      }
       setError(result.error ?? "Couldn't send. Try again.");
       scheduleResize();
     }
@@ -82,13 +121,20 @@ export function Composer({
     if (disabled) return;
     const el = textareaRef.current;
     if (!el) {
-      setDraft((prev) => prev + emoji);
+      const next = draft + emoji;
+      setDraft(next);
+      if (storageKey && typeof window !== "undefined") {
+        window.sessionStorage.setItem(storageKey, next);
+      }
       return;
     }
     const start = el.selectionStart ?? draft.length;
     const end = el.selectionEnd ?? draft.length;
     const next = draft.slice(0, start) + emoji + draft.slice(end);
     setDraft(next);
+    if (storageKey && typeof window !== "undefined") {
+      window.sessionStorage.setItem(storageKey, next);
+    }
     requestAnimationFrame(() => {
       el.focus();
       const pos = start + emoji.length;
@@ -124,7 +170,7 @@ export function Composer({
 
         {/* Embedded Slack-style bottom toolbar */}
         <div className="flex items-center justify-between border-t border-line/40 px-3 py-2">
-          {/* Quick reactions */}
+          {/* Quick reactions with mobile-friendly touch targets */}
           <div className="flex items-center gap-1 overflow-x-auto">
             {QUICK_EMOJIS.map((emoji) => (
               <button
@@ -132,7 +178,7 @@ export function Composer({
                 type="button"
                 disabled={disabled}
                 onClick={() => insertEmoji(emoji)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg hover:bg-harbor-tint/80 text-sm transition-colors active:scale-95 disabled:opacity-40"
+                className="flex h-8 w-8 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg hover:bg-harbor-tint/80 text-base sm:text-sm transition-colors active:scale-95 disabled:opacity-40"
                 aria-label={`Insert ${emoji}`}
               >
                 {emoji}
@@ -153,7 +199,7 @@ export function Composer({
               onClick={() => void doSend()}
               disabled={disabled || sending || draft.trim().length === 0}
               aria-label="Send message"
-              className="flex h-8 items-center gap-1.5 rounded-lg bg-compass px-3 text-xs font-medium text-white transition-all hover:bg-compass-dark active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-mist"
+              className="flex h-8 items-center gap-1.5 rounded-lg bg-compass px-3.5 text-xs font-medium text-white transition-all hover:bg-compass-dark active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-mist shadow-xs"
             >
               <span>Send</span>
               <svg width="12" height="12" viewBox="0 0 20 20" fill="none" aria-hidden="true">
