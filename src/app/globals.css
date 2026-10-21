@@ -64,11 +64,21 @@ body {
   overflow-x: hidden;
 }
 
-/* Visible, consistent keyboard focus everywhere — never suppressed. */
+/* Visible, consistent keyboard focus for accessible navigation */
 :focus-visible {
   outline: 2px solid var(--color-harbor);
   outline-offset: 2px;
-  border-radius: 4px;
+}
+
+/* Suppress inner focus border on inputs whose container card provides the focus ring */
+.no-focus-outline:focus,
+.no-focus-outline:focus-visible,
+textarea.no-focus-outline:focus,
+textarea.no-focus-outline:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 /* Respect the OS reduced-motion preference globally. */

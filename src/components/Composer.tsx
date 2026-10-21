@@ -165,7 +165,7 @@ export function Composer({
           placeholder="Message the room… (Shift+Enter for new line)"
           aria-label="Message"
           disabled={disabled}
-          className="auto-field-sizing max-h-[160px] min-h-[44px] w-full resize-none border-0 bg-transparent px-4 pt-3 pb-2 font-sans text-[14px] sm:text-[14.5px] leading-snug tracking-[-0.012em] text-ink outline-none placeholder:text-mist/70 disabled:cursor-not-allowed disabled:opacity-60"
+          className="no-focus-outline auto-field-sizing max-h-[160px] min-h-[44px] w-full resize-none border-0 bg-transparent px-4 pt-3 pb-2 font-sans text-[14px] sm:text-[14.5px] leading-snug tracking-[-0.012em] text-ink outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 placeholder:text-mist/70 disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         {/* Embedded Slack-style bottom toolbar */}
