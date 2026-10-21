@@ -26,6 +26,7 @@ const {
   setSessionCookie,
   clearSessionCookie,
   createOrRejoinSession,
+  ensureRoomMembership,
   leaveRoom,
 } = await import("@/server/session");
 
@@ -133,6 +134,56 @@ describe("Session Management & Lifecycle", () => {
       expect(result.session.id).toBe("new-sess");
     }
     expect(db.chatSession.create).toHaveBeenCalled();
+  });
+
+  it("ensureRoomMembership returns immediately if already in target room", async () => {
+    const existing = {
+      id: "sess-1",
+      nickname: "Nomad",
+      roomId: "room-1",
+    } as any;
+
+    const result = await ensureRoomMembership(existing, "room-1");
+    expect(result).toEqual({ ok: true, session: existing });
+    expect(db.chatSession.findFirst).not.toHaveBeenCalled();
+    expect(db.chatSession.update).not.toHaveBeenCalled();
+  });
+
+  it("ensureRoomMembership rejects if nickname is taken by someone else in target room", async () => {
+    const existing = {
+      id: "sess-1",
+      nickname: "Nomad",
+      nicknameKey: "nomad",
+      roomId: "room-1",
+    } as any;
+
+    db.chatSession.findFirst.mockResolvedValueOnce({ id: "other-user" });
+
+    const result = await ensureRoomMembership(existing, "room-2");
+    expect(result).toEqual({ ok: false, error: "nickname_taken" });
+    expect(db.chatSession.update).not.toHaveBeenCalled();
+  });
+
+  it("ensureRoomMembership updates roomId and extends expiry when joining target room without collision", async () => {
+    const existing = {
+      id: "sess-1",
+      nickname: "Nomad",
+      nicknameKey: "nomad",
+      roomId: "room-1",
+    } as any;
+
+    db.chatSession.findFirst.mockResolvedValueOnce(null);
+    const updatedSession = { ...existing, roomId: "room-2" };
+    db.chatSession.update.mockResolvedValueOnce(updatedSession);
+
+    const result = await ensureRoomMembership(existing, "room-2");
+    expect(result).toEqual({ ok: true, session: updatedSession });
+    expect(db.chatSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "sess-1" },
+        data: expect.objectContaining({ roomId: "room-2" }),
+      }),
+    );
   });
 
   it("leaveRoom clears roomId on the session row without deleting session token", async () => {

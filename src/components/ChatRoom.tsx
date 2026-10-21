@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
@@ -38,7 +39,6 @@ export function ChatRoom({
     restoreAfterPrepend,
   } = useAutoScroll();
 
-  const [leaving, setLeaving] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
@@ -115,13 +115,8 @@ export function ChatRoom({
     return sendMessage(nickname, body);
   }
 
-  async function handleLeave() {
-    setLeaving(true);
-    try {
-      await fetch(`/api/rooms/${room.slug}/leave`, { method: "POST" });
-    } finally {
-      router.push("/");
-    }
+  function handleLeave() {
+    router.push("/");
   }
 
   // Precompute which messages are consecutive (same sender within 5 minutes)
@@ -146,9 +141,9 @@ export function ChatRoom({
           <button
             type="button"
             onClick={handleLeave}
-            disabled={leaving}
-            aria-label="Leave room and choose another"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-horizon disabled:opacity-50"
+            aria-label="Back to all rooms"
+            title="Back to all rooms"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-horizon"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
@@ -177,7 +172,15 @@ export function ChatRoom({
               />
             </div>
             <p className="truncate text-xs text-mist tracking-tight">
-              You&apos;re <span className="font-medium text-harbor-dark">{nickname}</span> • {room.description}
+              You&apos;re <span className="font-semibold text-harbor-dark">{nickname}</span> (
+              <Link
+                href={`/rooms/${room.slug}?change=1`}
+                className="underline hover:text-harbor-dark transition-colors"
+                title="Change nickname"
+              >
+                change
+              </Link>
+              ) • {room.description}
             </p>
           </div>
 

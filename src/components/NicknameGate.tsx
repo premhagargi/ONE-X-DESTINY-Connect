@@ -22,18 +22,19 @@ const TRAVEL_NICKNAMES = [
 
 /**
  * The nickname-entry screen shown before joining a room.
- * Remembers previous nicknames across rooms and sessions on the same browser
- * via localStorage and server session continuity.
+ * Shown only for first-time visitors, expired sessions, or explicit nickname changes.
  */
 export function NicknameGate({
   roomSlug,
   roomName,
   defaultNickname,
+  takenInRoom = false,
   suspended,
 }: {
   roomSlug: string;
   roomName: string;
   defaultNickname?: string;
+  takenInRoom?: boolean;
   suspended: boolean;
 }) {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function NicknameGate({
   useEffect(() => {
     if (defaultNickname) {
       setNickname(defaultNickname);
-      setRemembered(true);
+      setRemembered(!takenInRoom);
       return;
     }
     if (typeof window !== "undefined") {
@@ -57,7 +58,7 @@ export function NicknameGate({
         setRemembered(true);
       }
     }
-  }, [defaultNickname]);
+  }, [defaultNickname, takenInRoom]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -129,7 +130,13 @@ export function NicknameGate({
           page in a private window).
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
+          {takenInRoom && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 font-medium">
+              The name &quot;{defaultNickname}&quot; is already in use by someone in {roomName}. Choose a different nickname for this room.
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
               {remembered ? "Your nickname in this browser" : "Pick a nickname"}

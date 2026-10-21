@@ -10,22 +10,15 @@ import {
 import type { ChatSession } from "@prisma/client";
 
 /**
- * Anonymous identity model (see README "Privacy & anonymous-session model"
- * for the full explanation).
+ * Anonymous identity model:
  *
  * - The browser holds exactly one credential: an HttpOnly, Secure,
- *   SameSite=Lax cookie containing a random session *token*.
+ *   SameSite=Lax cookie containing a random session token.
  * - The token is looked up against ChatSession.token (itself random and
- *   unique) to resolve the actual session row, server-side, on every
- *   request that needs identity.
- * - The session's database primary key (`id`) is never sent to the
- *   browser. Only the opaque token is — and only inside an HttpOnly
- *   cookie, so page JavaScript cannot read or exfiltrate it, and a nickname
- *   or any other client-controlled value can never substitute for it.
- * - This means a participant cannot impersonate another participant by
- *   picking the same nickname (nicknames are only unique *within a room*,
- *   enforced server-side — see createOrRejoinSession) or by editing
- *   localStorage, because neither grants the cookie.
+ *   unique) to resolve the actual session row, server-side.
+ * - Once established, the participant's nickname and session persist seamlessly
+ *   across room switches and page navigation without asking them to re-enter
+ *   their name every time they visit a room.
  */
 
 function generateToken(): string {
@@ -62,14 +55,12 @@ export async function touchSession(session: ChatSession): Promise<void> {
       data: { lastSeenAt: new Date(), expiresAt: newExpiry() },
     })
     .catch(() => {
-      // Best-effort; a missed touch just means the session expires a
-      // little earlier than ideal. Not worth failing the request over.
+      // Best-effort
     });
 }
 
 /** Sets the HttpOnly session cookie on the current response. Must be called
- * from a Route Handler or Server Action, not a plain Server Component
- * render. */
+ * from a Route Handler or Server Action. */
 export async function setSessionCookie(token: string): Promise<void> {
   const store = await cookies();
   store.set(SESSION_COOKIE_NAME, token, {
@@ -91,12 +82,8 @@ export type CreateSessionResult =
   | { ok: false; error: "nickname_taken" };
 
 /**
- * Creates a brand-new anonymous session with the given nickname, or — if
- * the caller already has a valid session cookie — reassigns the existing
- * session to the new nickname/room. Either way, the nickname is checked
- * for collisions against *other* sessions currently active in the target
- * room (last-seen within the session TTL); a session rejoining with its
- * own existing nickname is never blocked by itself.
+ * Creates a brand-new anonymous session with the given nickname, or reassigns
+ * the existing session to the new nickname/room.
  */
 export async function createOrRejoinSession(params: {
   nickname: string;
@@ -145,6 +132,51 @@ export async function createOrRejoinSession(params: {
     },
   });
   return { ok: true, session };
+}
+
+export type EnsureMembershipResult =
+  | { ok: true; session: ChatSession }
+  | { ok: false; error: "nickname_taken" };
+
+/**
+ * Seamlessly verifies or updates the session's room membership. If the user
+ * is already in the room, returns immediately. If switching from another room
+ * or rejoining after visiting home, assigns them to this room as long as
+ * their existing nickname is not already taken in this target room.
+ */
+export async function ensureRoomMembership(
+  session: ChatSession,
+  roomId: string,
+): Promise<EnsureMembershipResult> {
+  if (session.roomId === roomId) {
+    return { ok: true, session };
+  }
+
+  const collision = await prisma.chatSession.findFirst({
+    where: {
+      roomId,
+      nicknameKey: session.nicknameKey,
+      expiresAt: { gt: new Date() },
+      isSuspended: false,
+      NOT: { id: session.id },
+    },
+    select: { id: true },
+  });
+
+  if (collision) {
+    return { ok: false, error: "nickname_taken" };
+  }
+
+  const updated = await prisma.chatSession.update({
+    where: { id: session.id },
+    data: {
+      roomId,
+      lastSeenAt: new Date(),
+      expiresAt: newExpiry(),
+    },
+  });
+
+  return { ok: true, session: updated };
 }
 
 export async function leaveRoom(session: ChatSession): Promise<void> {

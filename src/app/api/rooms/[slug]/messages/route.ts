@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getRoomBySlug } from "@/server/rooms";
-import { getCurrentSession, touchSession } from "@/server/session";
+import { getCurrentSession, touchSession, ensureRoomMembership } from "@/server/session";
 import {
   createMessage,
   getHistoryPage,
@@ -19,13 +19,6 @@ import { DUPLICATE_MESSAGE_LOOKBACK } from "@/lib/constants";
  *                                                 (used to reconcile after
  *                                                 a realtime reconnect)
  * GET /api/rooms/:slug/messages               -> most recent page
- *
- * The room is resolved from the trusted URL slug on every call, and every
- * underlying query is scoped by that room's id — so a client cannot read
- * another room's history by supplying a different `before`/`since` id:
- * those cursors are only ever looked up *within* this room (see
- * getHistoryPage/getMessagesSince), and a cursor from a foreign room
- * simply matches nothing.
  */
 export async function GET(
   req: NextRequest,
@@ -58,12 +51,7 @@ const sendSchema = z.object({
 /**
  * POST /api/rooms/:slug/messages
  *
- * Server-side half of "instant chat": by the time this handler runs, the
- * sender's browser has already rendered the message optimistically (see
- * ChatRoom.tsx). This endpoint validates, persists, and then publishes a
- * Realtime Broadcast event so *other* participants receive it — the
- * sender reconciles their own optimistic bubble against the HTTP response
- * here, not against the broadcast (see useRealtimeMessages).
+ * Server-side half of instant chat: validates, persists, and publishes Realtime Broadcast.
  */
 export async function POST(
   req: NextRequest,
@@ -75,15 +63,22 @@ export async function POST(
     return NextResponse.json({ error: "room_inactive" }, { status: 404 });
   }
 
-  const session = await getCurrentSession();
+  let session = await getCurrentSession();
   if (!session) {
     return NextResponse.json({ error: "no_session" }, { status: 401 });
   }
   if (session.isSuspended) {
     return NextResponse.json({ error: "suspended" }, { status: 403 });
   }
+
+  // Ensure room membership: if the user switched tabs or navigated from home,
+  // seamlessly ensure they are joined to this room without erroring out
   if (session.roomId !== room.id) {
-    return NextResponse.json({ error: "not_in_room" }, { status: 403 });
+    const membership = await ensureRoomMembership(session, room.id);
+    if (!membership.ok) {
+      return NextResponse.json({ error: "not_in_room" }, { status: 403 });
+    }
+    session = membership.session;
   }
 
   const json = await req.json().catch(() => null);
@@ -138,8 +133,7 @@ export async function POST(
 
   await touchSession(session);
 
-  // Only broadcast on a genuinely new row — a deduped retry means the
-  // original send already triggered a broadcast.
+  // Only broadcast on a genuinely new row
   if (!result.deduped) {
     await broadcastMessage(room.slug, result.message);
   }
