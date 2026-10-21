@@ -140,8 +140,8 @@ export function ChatRoom({
   );
 
   return (
-    <div className="flex h-dvh flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-3 sm:px-6">
+    <div className="flex h-dvh flex-1 flex-col font-sans tracking-tight">
+      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-2.5 sm:px-6">
         <button
           type="button"
           onClick={handleLeave}
@@ -161,7 +161,7 @@ export function ChatRoom({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="truncate font-display text-lg text-ink sm:text-xl">{room.name}</h1>
+            <h1 className="truncate font-sans font-semibold text-base sm:text-lg text-ink tracking-tight">{room.name}</h1>
             <span
               title={status === "online" ? "Connected" : status === "connecting" ? "Connecting..." : "Offline"}
               className={`h-2 w-2 rounded-full shrink-0 ${
@@ -173,7 +173,7 @@ export function ChatRoom({
               }`}
             />
           </div>
-          <p className="truncate text-xs text-mist">
+          <p className="truncate text-xs text-mist tracking-tight">
             You&apos;re <span className="font-medium text-harbor-dark">{nickname}</span> • {room.description}
           </p>
         </div>
@@ -182,7 +182,7 @@ export function ChatRoom({
           type="button"
           onClick={handleShare}
           title="Share room link"
-          className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-horizon-50 px-3 text-xs font-medium text-ink-soft transition-colors hover:border-harbor hover:text-harbor-dark"
+          className="flex h-8 items-center gap-1.5 rounded-full border border-line bg-horizon-50 px-3 text-xs font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor hover:text-harbor-dark"
         >
           {shareCopied ? (
             <span className="text-harbor-dark font-semibold">Copied!</span>
@@ -214,7 +214,7 @@ export function ChatRoom({
                 type="button"
                 onClick={handleLoadOlder}
                 disabled={loadingOlder}
-                className="rounded-full border border-line bg-card px-4 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-harbor disabled:opacity-50 shadow-2xs"
+                className="rounded-full border border-line bg-card px-4 py-1.5 text-xs sm:text-sm font-medium text-ink-soft tracking-tight transition-colors hover:border-harbor disabled:opacity-50 shadow-2xs"
               >
                 {loadingOlder ? "Loading…" : "Load earlier messages"}
               </button>
@@ -222,12 +222,12 @@ export function ChatRoom({
           )}
 
           {messages.length === 0 && (
-            <div className="my-auto flex flex-col items-center justify-center px-4 py-12 text-center">
+            <div className="my-auto flex flex-col items-center justify-center px-4 py-12 text-center font-sans tracking-tight">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-harbor-tint text-2xl">
                 ✈️
               </div>
-              <h2 className="mt-3 font-display text-xl text-ink">Welcome to {room.name}</h2>
-              <p className="mt-1 max-w-xs text-sm text-mist">
+              <h2 className="mt-3 font-sans font-bold text-lg text-ink tracking-tight">Welcome to {room.name}</h2>
+              <p className="mt-1 max-w-xs text-xs sm:text-sm text-mist tracking-tight">
                 Nobody has posted yet. Say hello, ask a question, or share travel tips!
               </p>
             </div>
@@ -257,7 +257,7 @@ export function ChatRoom({
             <button
               type="button"
               onClick={() => scrollToBottom("smooth")}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:bg-ink-soft active:scale-95"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg tracking-tight transition-all hover:bg-ink-soft active:scale-95"
             >
               <span>{newBelowCount} new message{newBelowCount > 1 ? "s" : ""}</span>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

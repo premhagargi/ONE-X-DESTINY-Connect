@@ -1,10 +1,10 @@
 export default function RoomLoading() {
   return (
-    <div className="flex h-dvh flex-1 flex-col bg-horizon">
+    <div className="flex h-dvh flex-1 flex-col bg-horizon font-sans tracking-tight">
       {/* Header Skeleton */}
-      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-3 sm:px-6">
+      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-2.5 sm:px-6">
         <div className="h-9 w-9 shrink-0 rounded-full bg-horizon-50 animate-pulse" />
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 flex-1 space-y-1.5">
           <div className="h-5 w-36 rounded-md bg-horizon-50 animate-pulse" />
           <div className="h-3.5 w-60 rounded-md bg-horizon-50/60 animate-pulse" />
         </div>
@@ -12,7 +12,7 @@ export default function RoomLoading() {
       </header>
 
       {/* Message List Skeleton */}
-      <div className="flex-1 overflow-y-auto px-3 py-6 sm:px-6 space-y-5">
+      <div className="flex-1 overflow-y-auto px-3 py-6 sm:px-6 space-y-4">
         {/* Message 1 */}
         <div className="flex gap-3 px-3 py-1.5 animate-pulse">
           <div className="h-9 w-9 shrink-0 rounded-xl bg-line/50" />

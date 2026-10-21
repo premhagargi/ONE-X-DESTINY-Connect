@@ -147,14 +147,14 @@ export function Composer({
   const nearLimit = remaining <= 80;
 
   return (
-    <div className="border-t border-line bg-card px-3 py-3 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-      {error && <p className="mb-2 px-1 text-sm text-flag">{error}</p>}
+    <div className="border-t border-line bg-card px-3 py-3 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 font-sans tracking-tight">
+      {error && <p className="mb-2 px-1 text-xs text-flag font-medium tracking-tight">{error}</p>}
       {disabled && disabledReason && (
-        <p className="mb-2 px-1 text-sm text-mist">{disabledReason}</p>
+        <p className="mb-2 px-1 text-xs text-mist font-medium tracking-tight">{disabledReason}</p>
       )}
 
       {/* Slack-style contained input card */}
-      <div className="flex flex-col rounded-2xl border border-line bg-horizon-50/40 shadow-xs transition-all focus-within:border-harbor focus-within:bg-card focus-within:ring-2 focus-within:ring-harbor/15">
+      <div className="flex flex-col rounded-2xl border border-line bg-horizon-50/40 shadow-xs transition-all focus-within:border-harbor focus-within:bg-card focus-within:ring-2 focus-within:ring-harbor/15 font-sans tracking-tight">
         <textarea
           ref={textareaRef}
           rows={1}
@@ -165,11 +165,11 @@ export function Composer({
           placeholder="Message the room… (Shift+Enter for new line)"
           aria-label="Message"
           disabled={disabled}
-          className="auto-field-sizing max-h-[160px] min-h-[44px] w-full resize-none border-0 bg-transparent px-4 pt-3 pb-2 text-[15px] leading-relaxed text-ink outline-none placeholder:text-mist/70 disabled:cursor-not-allowed disabled:opacity-60"
+          className="auto-field-sizing max-h-[160px] min-h-[44px] w-full resize-none border-0 bg-transparent px-4 pt-3 pb-2 font-sans text-[14px] sm:text-[14.5px] leading-snug tracking-[-0.012em] text-ink outline-none placeholder:text-mist/70 disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         {/* Embedded Slack-style bottom toolbar */}
-        <div className="flex items-center justify-between border-t border-line/40 px-3 py-2">
+        <div className="flex items-center justify-between border-t border-line/40 px-3 py-2 font-sans tracking-tight">
           {/* Quick reactions with mobile-friendly touch targets */}
           <div className="flex items-center gap-1 overflow-x-auto">
             {QUICK_EMOJIS.map((emoji) => (
@@ -189,7 +189,7 @@ export function Composer({
           {/* Counter and Send button */}
           <div className="flex items-center gap-2">
             {nearLimit && !disabled && (
-              <span className="shrink-0 text-right text-xs font-medium text-mist">
+              <span className="shrink-0 text-right text-xs font-medium text-mist font-mono tracking-tight">
                 {remaining}
               </span>
             )}
@@ -199,7 +199,7 @@ export function Composer({
               onClick={() => void doSend()}
               disabled={disabled || sending || draft.trim().length === 0}
               aria-label="Send message"
-              className="flex h-8 items-center gap-1.5 rounded-lg bg-compass px-3.5 text-xs font-medium text-white transition-all hover:bg-compass-dark active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-mist shadow-xs"
+              className="flex h-8 items-center gap-1.5 rounded-lg bg-compass px-3.5 text-xs font-semibold text-white tracking-tight transition-all hover:bg-compass-dark active:scale-95 disabled:cursor-not-allowed disabled:bg-line disabled:text-mist shadow-xs"
             >
               <span>Send</span>
               <svg width="12" height="12" viewBox="0 0 20 20" fill="none" aria-hidden="true">

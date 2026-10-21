@@ -28,6 +28,7 @@ export default async function RoomPage({
         <NicknameGate
           roomSlug={room.slug}
           roomName={room.name}
+          defaultNickname={session?.nickname}
           suspended={!!session?.isSuspended}
         />
       </main>

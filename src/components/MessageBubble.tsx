@@ -105,7 +105,7 @@ export const MessageBubble = memo(function MessageBubble({
 
   return (
     <div
-      className={`slack-msg-row group relative flex gap-3 px-3 sm:px-4 py-1.5 transition-colors hover:bg-horizon/50 rounded-xl ${
+      className={`slack-msg-row group relative flex gap-3 px-3 sm:px-4 py-1.5 transition-colors hover:bg-horizon/50 rounded-xl font-sans tracking-tight ${
         isConsecutive ? "mt-0.5" : "mt-2.5"
       } ${message.status === "failed" ? "opacity-60" : ""}`}
     >
@@ -113,12 +113,12 @@ export const MessageBubble = memo(function MessageBubble({
       <div className="w-9 shrink-0 flex justify-center">
         {!isConsecutive ? (
           <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-2xs ${avatarStyle.bg} ${avatarStyle.text}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-2xs font-sans tracking-tight ${avatarStyle.bg} ${avatarStyle.text}`}
           >
             {initial}
           </span>
         ) : (
-          <span className="opacity-0 group-hover:opacity-100 text-[10px] text-mist transition-opacity self-start pt-1 font-mono">
+          <span className="opacity-0 group-hover:opacity-100 text-[10px] text-mist transition-opacity self-start pt-1 font-mono tracking-tighter">
             {formatTime(message.createdAt).split(" ")[0]}
           </span>
         )}
@@ -128,24 +128,24 @@ export const MessageBubble = memo(function MessageBubble({
       <div className="min-w-0 flex-1">
         {!isConsecutive && (
           <div className="flex items-baseline gap-2 mb-0.5">
-            <span className="font-semibold text-sm text-ink">{message.nickname}</span>
+            <span className="font-sans font-semibold text-[13.5px] tracking-tight text-ink">{message.nickname}</span>
             {isMine && (
-              <span className="rounded bg-harbor-tint px-1.5 py-0.2 text-[10px] font-medium text-harbor-dark">
+              <span className="font-sans rounded bg-harbor-tint px-1.5 py-0.2 text-[10px] font-semibold text-harbor-dark tracking-tight">
                 You
               </span>
             )}
-            <span className="text-xs text-mist">{formatTime(message.createdAt)}</span>
+            <span className="font-sans text-[11px] text-mist tracking-tight">{formatTime(message.createdAt)}</span>
           </div>
         )}
 
-        {/* Message Body */}
-        <div className="text-[15px] leading-relaxed text-ink break-words whitespace-pre-wrap select-text">
+        {/* Message Body with tight Inter typography */}
+        <div className="font-sans text-[14px] sm:text-[14.5px] leading-[1.38] tracking-[-0.012em] text-ink break-words whitespace-pre-wrap select-text">
           {renderMessageBody(message.body)}
         </div>
 
         {/* Message Delivery Status for Sending / Failed */}
         {message.status !== "sent" && (
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-mist">
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-mist font-sans tracking-tight">
             {message.status === "sending" && <span className="italic text-mist">Sending…</span>}
             {message.status === "failed" && (
               <>
@@ -164,7 +164,7 @@ export const MessageBubble = memo(function MessageBubble({
 
         {/* Slack-Style Interactive Reaction Pills */}
         {reactionEntries.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+          <div className="mt-1.5 flex flex-wrap gap-1.5 items-center font-sans tracking-tight">
             {reactionEntries.map(([emoji, count]) => {
               const hasReacted = myReactions.includes(emoji);
               return (
@@ -172,7 +172,7 @@ export const MessageBubble = memo(function MessageBubble({
                   key={emoji}
                   type="button"
                   onClick={() => onToggleReaction?.(message.id, emoji)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs transition-all active:scale-95 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs transition-all active:scale-95 font-sans tracking-tight ${
                     hasReacted
                       ? "border border-harbor bg-harbor-tint text-harbor-dark font-semibold shadow-2xs"
                       : "border border-line bg-card hover:bg-horizon-50 text-ink-soft hover:border-mist"
@@ -189,7 +189,7 @@ export const MessageBubble = memo(function MessageBubble({
 
       {/* Slack-Style Floating Hover Action Pill */}
       {message.status === "sent" && (
-        <div className="absolute right-3 -top-3.5 hidden group-hover:flex items-center gap-0.5 rounded-full border border-line bg-card shadow-md px-1.5 py-0.5 z-10 transition-all">
+        <div className="absolute right-3 -top-3.5 hidden group-hover:flex items-center gap-0.5 rounded-full border border-line bg-card shadow-md px-1.5 py-0.5 z-10 transition-all font-sans tracking-tight">
           {QUICK_ACTIONS.map((emoji) => (
             <button
               key={emoji}
