@@ -47,6 +47,15 @@ describe("nicknameSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toBe("Wandering Owl");
   });
+
+  it("rejects reserved system / administrative nicknames", () => {
+    expect(nicknameSchema.safeParse("admin").success).toBe(false);
+    expect(nicknameSchema.safeParse("Admin").success).toBe(false);
+    expect(nicknameSchema.safeParse("Moderator").success).toBe(false);
+    expect(nicknameSchema.safeParse("System").success).toBe(false);
+    expect(nicknameSchema.safeParse("Support").success).toBe(false);
+    expect(nicknameSchema.safeParse("ONE-X-DESTINY").success).toBe(false);
+  });
 });
 
 describe("normalizeNickname / nicknameKeyOf", () => {
@@ -97,6 +106,21 @@ describe("messageBodySchema", () => {
     const result = messageBodySchema.safeParse("  hello  ");
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toBe("hello");
+  });
+
+  it("rejects excessive link spam (more than 3 URLs)", () => {
+    const spam = "Visit https://a.com and https://b.com and https://c.com and https://d.com";
+    expect(messageBodySchema.safeParse(spam).success).toBe(false);
+  });
+
+  it("allows normal links up to 3 URLs", () => {
+    const valid = "Check out https://mysite.com and https://othersite.com";
+    expect(messageBodySchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects credit card / payment card numbers", () => {
+    const withCC = "Here is my card 4532 1123 4567 8901";
+    expect(messageBodySchema.safeParse(withCC).success).toBe(false);
   });
 });
 

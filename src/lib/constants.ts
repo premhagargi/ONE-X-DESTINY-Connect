@@ -20,6 +20,25 @@ export const NICKNAME_MAX_LENGTH = 24;
  * (zero-width characters are stripped before this check runs). */
 export const NICKNAME_PATTERN = /^[\p{L}\p{N} _.'-]+$/u;
 
+/** Nicknames reserved to prevent impersonation of site operators or system services. */
+export const RESERVED_NICKNAMES = [
+  "admin",
+  "administrator",
+  "moderator",
+  "mod",
+  "system",
+  "support",
+  "staff",
+  "helpdesk",
+  "one-x-destiny",
+  "onexdestiny",
+  "waypoint",
+  "official",
+  "security",
+  "owner",
+  "root",
+] as const;
+
 export const MESSAGE_MAX_LENGTH = 1000;
 
 /** Messages older than this are eligible for cleanup. Override with the

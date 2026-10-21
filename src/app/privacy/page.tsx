@@ -46,6 +46,30 @@ export default function PrivacyPage() {
         </p>
         <p>Don&apos;t share anything here you wouldn&apos;t want a stranger to read.</p>
       </div>
+
+      <h2 className="mt-10 font-display text-2xl text-ink">Community Guidelines &amp; Compliance</h2>
+      <div className="mt-4 flex flex-col gap-4 text-[15px] leading-relaxed text-ink-soft">
+        <p>
+          To maintain a safe, welcoming, and legally compliant environment for everyone, all participants must abide by these rules:
+        </p>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li>
+            <strong className="text-ink">No harassment or hate speech:</strong> Discrimination, threats, hate speech, bullying, and intimidation based on race, religion, gender, sexual orientation, disability, or nationality are strictly prohibited.
+          </li>
+          <li>
+            <strong className="text-ink">No illicit or harmful content:</strong> Posting sexually explicit material, promoting violence, self-harm, illegal goods, or unlawful conduct results in immediate ban and report escalation.
+          </li>
+          <li>
+            <strong className="text-ink">No scams, phishing, or bot spam:</strong> Bulk advertising, deceptive links, referral schemes, payment fraud, and impersonation of administrators or moderators are blocked.
+          </li>
+          <li>
+            <strong className="text-ink">Protect personal safety &amp; privacy:</strong> Never share sensitive personal data (such as bank details, credit card numbers, home addresses, or private phone numbers) in public rooms.
+          </li>
+        </ul>
+        <p className="mt-2 text-sm text-mist">
+          Violations can be flagged using the report button on any message. Moderators actively review reports and immediately revoke session access for bad actors.
+        </p>
+      </div>
     </main>
   );
 }
