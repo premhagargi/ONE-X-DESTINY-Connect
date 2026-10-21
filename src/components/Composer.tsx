@@ -10,6 +10,7 @@ import {
 import { MESSAGE_MAX_LENGTH } from "@/lib/constants";
 
 const MAX_TEXTAREA_HEIGHT_PX = 160;
+const QUICK_EMOJIS = ["✈️", "🗺️", "📍", "🎒", "🏨", "👍", "❤️"];
 
 export function Composer({
   onSend,
@@ -68,15 +69,56 @@ export function Composer({
     }
   }
 
+  function insertEmoji(emoji: string) {
+    if (disabled) return;
+    const el = textareaRef.current;
+    if (!el) {
+      setDraft((prev) => prev + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+      resize();
+    });
+  }
+
   const remaining = MESSAGE_MAX_LENGTH - draft.length;
   const nearLimit = remaining <= 80;
 
   return (
-    <div className="border-t border-line bg-card px-3 py-3 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
+    <div className="border-t border-line bg-card px-3 py-2.5 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
       {error && <p className="mb-2 px-1 text-sm text-flag">{error}</p>}
       {disabled && disabledReason && (
         <p className="mb-2 px-1 text-sm text-mist">{disabledReason}</p>
       )}
+
+      {/* Quick Travel Reactions */}
+      <div className="mb-2 flex items-center justify-between gap-1 overflow-x-auto px-1 text-xs">
+        <div className="flex items-center gap-1">
+          {QUICK_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              disabled={disabled}
+              onClick={() => insertEmoji(emoji)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-horizon-50 hover:bg-harbor-tint text-sm transition-colors disabled:opacity-40"
+              aria-label={`Insert ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        {nearLimit && !disabled && (
+          <span className="shrink-0 text-right text-xs text-mist">{remaining} left</span>
+        )}
+      </div>
+
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -108,9 +150,6 @@ export function Composer({
           </svg>
         </button>
       </div>
-      {nearLimit && !disabled && (
-        <p className="mt-1 px-1 text-right text-xs text-mist">{remaining} left</p>
-      )}
     </div>
   );
 }

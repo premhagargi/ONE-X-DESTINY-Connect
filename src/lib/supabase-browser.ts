@@ -9,23 +9,22 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * expose; it never touches the database directly (no `.from(...)` calls),
  * so no table-level RLS is relied on for message delivery.
  */
-let client: SupabaseClient | undefined;
+let client: SupabaseClient | null | undefined;
 
-export function getSupabaseBrowser(): SupabaseClient {
-  if (client) return client;
+export function getSupabaseBrowser(): SupabaseClient | null {
+  if (client !== undefined) return client;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    throw new Error(
-      "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set for realtime chat to work.",
-    );
+    client = null;
+    return null;
   }
 
   client = createClient(url, key, {
     realtime: {
-      params: { eventsPerSecond: 5 },
+      params: { eventsPerSecond: 10 },
     },
   });
   return client;

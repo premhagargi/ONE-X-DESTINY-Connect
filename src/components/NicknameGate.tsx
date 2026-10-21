@@ -5,6 +5,21 @@ import { useId, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from "@/lib/constants";
 
+const TRAVEL_NICKNAMES = [
+  "Wandering Owl",
+  "Himalayan Nomad",
+  "Solo Backpacker",
+  "Midnight Voyager",
+  "Alpine Trekker",
+  "Coastal Rover",
+  "Silent Drifter",
+  "Curious Wayfarer",
+  "Island Explorer",
+  "Desert Pilgrim",
+  "Mountain Stray",
+  "Urban Stroller",
+];
+
 /**
  * The nickname-entry screen shown before joining a room. A plain client
  * component (not a Server Action) so it can show inline, immediate
@@ -54,6 +69,12 @@ export function NicknameGate({
     }
   }
 
+  function pickRandomNickname() {
+    const random = TRAVEL_NICKNAMES[Math.floor(Math.random() * TRAVEL_NICKNAMES.length)];
+    setNickname(random);
+    setError(null);
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-5 py-12">
       <Link
@@ -83,9 +104,18 @@ export function NicknameGate({
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">
-          <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
-            Pick a nickname
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
+              Pick a nickname
+            </label>
+            <button
+              type="button"
+              onClick={pickRandomNickname}
+              className="text-xs font-medium text-harbor transition-colors hover:text-harbor-dark hover:underline"
+            >
+              🎲 Surprise me
+            </button>
+          </div>
           <input
             id={inputId}
             name="nickname"

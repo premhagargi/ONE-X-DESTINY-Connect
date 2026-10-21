@@ -103,6 +103,17 @@ export function useRealtimeMessages(params: {
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();
+
+    if (!supabase) {
+      // Safe fallback to auto-polling if Supabase Realtime keys are not configured yet,
+      // ensuring the chat continues to work seamlessly without crashing.
+      setStatus("online");
+      const pollTimer = setInterval(() => {
+        void reconcile();
+      }, 3500);
+      return () => clearInterval(pollTimer);
+    }
+
     const channel = supabase.channel(realtimeChannelForRoom(roomSlug));
 
     channel.on("broadcast", { event: REALTIME_EVENT_MESSAGE_CREATED }, ({ payload }) => {

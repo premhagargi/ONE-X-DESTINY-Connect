@@ -1,23 +1,37 @@
 import Link from "next/link";
 import type { Room } from "@prisma/client";
 
+const ROOM_ICONS: Record<string, string> = {
+  "solo-travel": "🎒",
+  "weekend-getaways": "🚗",
+  "budget-travel": "💰",
+  "hidden-gems-india": "💎",
+  "backpacking": "⛺",
+  "travel-questions": "🧭",
+};
+
 /**
  * A single room, laid out like a ticket stub: name + description on the
  * left, then the join action on the right. Deliberately not a rounded,
  * shadowed SaaS card — see the design notes in README.md.
  */
 export function RoomRow({ room }: { room: Room }) {
+  const icon = ROOM_ICONS[room.slug] || "🌍";
+
   return (
     <li>
       <Link
         href={`/rooms/${room.slug}`}
-        className="group grid grid-cols-[1fr_auto] items-center gap-4 rounded-xl border border-line bg-card px-5 py-4 transition-colors hover:border-harbor sm:px-6 sm:py-5"
+        className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-xl border border-line bg-card px-5 py-4 transition-all hover:border-harbor hover:shadow-sm sm:px-6 sm:py-5"
       >
-        <span>
-          <span className="block font-display text-xl text-ink sm:text-2xl">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-horizon-50 text-xl border border-line/60 group-hover:scale-105 transition-transform">
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-display text-xl text-ink sm:text-2xl">
             {room.name}
           </span>
-          <span className="mt-1 block text-sm text-mist sm:text-base">
+          <span className="mt-1 block line-clamp-1 text-sm text-mist sm:text-base">
             {room.description}
           </span>
         </span>
@@ -29,7 +43,7 @@ export function RoomRow({ room }: { room: Room }) {
             viewBox="0 0 14 14"
             fill="none"
             aria-hidden="true"
-            className="shrink-0"
+            className="shrink-0 transition-transform group-hover:translate-x-0.5"
           >
             <path
               d="M2 7h10M8 3l4 4-4 4"
