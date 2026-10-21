@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import type { HistoryPage } from "@/types/chat";
@@ -40,8 +40,32 @@ export function ChatRoom({
 
   const [leaving, setLeaving] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
+  const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
   const prevLastKeyRef = useRef<string | null>(null);
   const didInitialScroll = useRef(false);
+
+  const handleToggleReaction = useCallback((messageId: string, emoji: string) => {
+    setMyReactions((prev) => {
+      const current = prev[messageId] || [];
+      const hasReacted = current.includes(emoji);
+      const next = hasReacted
+        ? current.filter((e) => e !== emoji)
+        : [...current, emoji];
+
+      setReactions((rPrev) => {
+        const msgReactions = { ...(rPrev[messageId] || {}) };
+        if (hasReacted) {
+          msgReactions[emoji] = Math.max(0, (msgReactions[emoji] || 1) - 1);
+        } else {
+          msgReactions[emoji] = (msgReactions[emoji] || 0) + 1;
+        }
+        return { ...rPrev, [messageId]: msgReactions };
+      });
+
+      return { ...prev, [messageId]: next };
+    });
+  }, []);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -103,18 +127,18 @@ export function ChatRoom({
     }
   }
 
-  // Precompute which bubbles should show a nickname label (the first
-  // message in a run from a given sender), via an immutable reduce rather
-  // than mutating a closure variable while mapping during render.
+  // Precompute which messages are consecutive (same sender within 5 minutes)
   const rows = useMemo(
     () =>
-      messages.reduce<{ message: (typeof messages)[number]; showNickname: boolean }[]>(
-        (acc, m) => {
-          const prevNickname = acc.length ? acc[acc.length - 1].message.nickname : null;
-          return [...acc, { message: m, showNickname: m.nickname !== prevNickname }];
-        },
-        [],
-      ),
+      messages.map((m, idx) => {
+        if (idx === 0) return { message: m, isConsecutive: false };
+        const prev = messages[idx - 1];
+        const isSameSender = prev.nickname === m.nickname;
+        const timeDiff =
+          new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime();
+        const isConsecutive = isSameSender && timeDiff < 1000 * 60 * 5;
+        return { message: m, isConsecutive };
+      }),
     [messages],
   );
 
@@ -212,16 +236,19 @@ export function ChatRoom({
             </div>
           )}
 
-          <div className="flex flex-col gap-3">
-            {rows.map(({ message: m, showNickname }) => {
+          <div className="flex flex-col gap-0.5">
+            {rows.map(({ message: m, isConsecutive }) => {
               const isMine = m.nickname === nickname;
               return (
                 <MessageBubble
                   key={m.clientKey}
                   message={m}
                   isMine={isMine}
-                  showNickname={showNickname && !isMine}
+                  isConsecutive={isConsecutive}
                   onRetry={retryMessage}
+                  reactions={reactions[m.id]}
+                  myReactions={myReactions[m.id]}
+                  onToggleReaction={handleToggleReaction}
                 />
               );
             })}

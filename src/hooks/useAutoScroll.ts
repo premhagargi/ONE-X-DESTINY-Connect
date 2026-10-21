@@ -19,24 +19,43 @@ export function useAutoScroll() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [newBelowCount, setNewBelowCount] = useState(0);
+  const isNearBottomRef = useRef(true);
+  const scrollRafRef = useRef<number | null>(null);
   const pendingPrependRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(
     null,
   );
 
   const checkNearBottom = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const near = distance < NEAR_BOTTOM_THRESHOLD_PX;
-    setIsNearBottom(near);
-    if (near) setNewBelowCount(0);
+    if (scrollRafRef.current !== null) return;
+
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const el = containerRef.current;
+      if (!el) return;
+
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const near = distance < NEAR_BOTTOM_THRESHOLD_PX;
+
+      if (near !== isNearBottomRef.current) {
+        isNearBottomRef.current = near;
+        setIsNearBottom(near);
+      }
+      if (near) {
+        setNewBelowCount((prev) => (prev !== 0 ? 0 : prev));
+      }
+    });
   }, []);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     el.addEventListener("scroll", checkNearBottom, { passive: true });
-    return () => el.removeEventListener("scroll", checkNearBottom);
+    return () => {
+      el.removeEventListener("scroll", checkNearBottom);
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
   }, [checkNearBottom]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
@@ -44,6 +63,7 @@ export function useAutoScroll() {
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior });
     setNewBelowCount(0);
+    isNearBottomRef.current = true;
     setIsNearBottom(true);
   }, []);
 

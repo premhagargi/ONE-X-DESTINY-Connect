@@ -101,6 +101,17 @@ body {
   border-radius: 16px 16px 16px 4px;
 }
 
+/* Slack-style message row virtualization & paint optimization */
+.slack-msg-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 48px;
+}
+
+/* Modern zero-reflow native textarea sizing */
+.auto-field-sizing {
+  field-sizing: content;
+}
+
 @supports (height: 100dvh) {
   .h-dvh {
     height: 100dvh;
