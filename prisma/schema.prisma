@@ -1,0 +1,114 @@
+// Prisma schema for the Anonymous Travel Group Chat MVP.
+//
+// Connection strategy (see README for details):
+// - DATABASE_URL  -> Supabase "Transaction pooler" (Supavisor, port 6543, ?pgbouncer=true)
+//                    used by the running application (serverless-friendly, pooled).
+// - DIRECT_URL    -> Supabase "Direct connection" (port 5432)
+//                    used only by Prisma Migrate / `prisma db push` / `prisma migrate deploy`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// A predefined, topic-based chat room. Rooms are seeded data, editable by an
+/// operator (see prisma/seed.ts) — there is no end-user room creation in the MVP.
+model Room {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  messages Message[]
+
+  @@map("rooms")
+}
+
+/// An anonymous, pseudonymous participant. The row's `id` is never exposed to
+/// the browser — the browser only holds an opaque, signed session token
+/// (see src/server/session.ts) that resolves to this row server-side.
+model ChatSession {
+  id           String    @id @default(cuid())
+  /// Random, unguessable token used as the lookup key for a session cookie.
+  /// Distinct from `id` so that even a leaked primary key is not a usable
+  /// credential — only the token (stored only in an HttpOnly cookie) is.
+  token        String    @unique @default(cuid())
+  nickname     String
+  /// Lowercased nickname used for case-insensitive uniqueness-per-room checks.
+  nicknameKey  String    @map("nickname_key")
+  roomId       String?   @map("room_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at")
+  /// Sessions are soft-expired after a period of inactivity; see lib/constants.ts.
+  expiresAt    DateTime  @map("expires_at")
+  isSuspended  Boolean   @default(false) @map("is_suspended")
+  suspendedReason String? @map("suspended_reason")
+
+  messages Message[]
+  reports  Report[]
+
+  @@index([roomId, nicknameKey])
+  @@map("chat_sessions")
+}
+
+/// A single chat message. `nickname` is a snapshot taken at send time so a
+/// later nickname change (not currently exposed in the UI, but reserved)
+/// never rewrites history.
+model Message {
+  id             String       @id @default(cuid())
+  roomId         String       @map("room_id")
+  /// Nullable so that purging an *expired* ChatSession (see the retention
+  /// cleanup job) never cascades into deleting messages that are still
+  /// within the retention window — only the link to the (now-gone) session
+  /// row is cleared; the message's nickname snapshot and body are
+  /// untouched. A session row itself is only ever deleted once expired.
+  sessionId      String?      @map("session_id")
+  nickname       String
+  body           String
+  /// Client-generated key used to make sends idempotent and to reconcile the
+  /// sender's optimistic bubble with the persisted row. Unique per room.
+  clientKey      String       @map("client_key")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  isDeleted      Boolean      @default(false) @map("is_deleted")
+  deletedReason  String?      @map("deleted_reason")
+
+  room    Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  reports Report[]
+
+  // Core access pattern: "give me the last N messages for room X ordered by
+  // time" and "give me messages for room X before cursor Y" — both served by
+  // this composite index.
+  @@index([roomId, createdAt])
+  @@unique([roomId, clientKey])
+  @@map("messages")
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
+/// A user-submitted report against a message, for the moderation queue.
+model Report {
+  id          String       @id @default(cuid())
+  messageId   String?      @map("message_id")
+  sessionId   String?      @map("session_id")
+  reason      String
+  status      ReportStatus @default(OPEN)
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  message Message?     @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("reports")
+}

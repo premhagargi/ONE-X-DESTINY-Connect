@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  /* "Harbor at dusk" palette — a cool, horizon-inspired base with a warm
+     clay accent for action, chosen to read as travel without reaching for
+     postcard clichés (no plane/globe iconography, no cream+terracotta). */
+  --color-ink: #16211e;
+  --color-ink-soft: #3c4a46;
+  --color-mist: #5b6b66;
+  --color-horizon: #eef1ee;
+  --color-horizon-50: #f6f8f6;
+  --color-card: #ffffff;
+  --color-line: #d9e0db;
+
+  --color-harbor: #1f6f78;
+  --color-harbor-dark: #164f56;
+  --color-harbor-tint: #e4eeee;
+
+  --color-compass: #d97a3f;
+  --color-compass-dark: #b55f2a;
+  --color-compass-tint: #fbe9dc;
+
+  --color-flag: #c2453f;
+  --color-flag-tint: #fbe4e2;
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-mist: var(--color-mist);
+  --color-horizon: var(--color-horizon);
+  --color-horizon-50: var(--color-horizon-50);
+  --color-card: var(--color-card);
+  --color-line: var(--color-line);
+  --color-harbor: var(--color-harbor);
+  --color-harbor-dark: var(--color-harbor-dark);
+  --color-harbor-tint: var(--color-harbor-tint);
+  --color-compass: var(--color-compass);
+  --color-compass-dark: var(--color-compass-dark);
+  --color-compass-tint: var(--color-compass-tint);
+  --color-flag: var(--color-flag);
+  --color-flag-tint: var(--color-flag-tint);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+* {
+  min-width: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-horizon);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Visible, consistent keyboard focus everywhere — never suppressed. */
+:focus-visible {
+  outline: 2px solid var(--color-harbor);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect the OS reduced-motion preference globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A perforated "ticket stub" divider used on room rows — a travel-document
+   motif realized as a graphic device, not clipart. */
+.perforated {
+  background-image: radial-gradient(circle, var(--color-line) 1.5px, transparent 1.5px);
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  background-position: left center;
+}
+
+/* Message bubble tail: a single sharp corner instead of a speech-bubble
+   triangle asset. */
+.bubble-mine {
+  border-radius: 16px 16px 4px 16px;
+}
+.bubble-theirs {
+  border-radius: 16px 16px 16px 4px;
+}
+
+@supports (height: 100dvh) {
+  .h-dvh {
+    height: 100dvh;
+  }
+}

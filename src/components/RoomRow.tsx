@@ -1,0 +1,46 @@
+import Link from "next/link";
+import type { Room } from "@prisma/client";
+
+/**
+ * A single room, laid out like a ticket stub: name + description on the
+ * left, then the join action on the right. Deliberately not a rounded,
+ * shadowed SaaS card — see the design notes in README.md.
+ */
+export function RoomRow({ room }: { room: Room }) {
+  return (
+    <li>
+      <Link
+        href={`/rooms/${room.slug}`}
+        className="group grid grid-cols-[1fr_auto] items-center gap-4 rounded-xl border border-line bg-card px-5 py-4 transition-colors hover:border-harbor sm:px-6 sm:py-5"
+      >
+        <span>
+          <span className="block font-display text-xl text-ink sm:text-2xl">
+            {room.name}
+          </span>
+          <span className="mt-1 block text-sm text-mist sm:text-base">
+            {room.description}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 rounded-full bg-harbor-tint px-4 py-2 text-sm font-medium text-harbor-dark transition-colors group-hover:bg-harbor group-hover:text-white">
+          Join
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <path
+              d="M2 7h10M8 3l4 4-4 4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </Link>
+    </li>
+  );
+}
